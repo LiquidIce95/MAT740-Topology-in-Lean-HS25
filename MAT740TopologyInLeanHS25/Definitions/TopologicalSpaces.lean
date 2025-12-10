@@ -322,15 +322,18 @@ theorem consistency_alt_def
       intro x_in_a
       let nei_x : Set (Set X) := neighbourhood x
       have x_in_closure_comp : x∈ ⋃z∈ closure_sets ,zᶜ := by
-        rw [mem_iUnion]
-        rw [a_closure_correct, mem_iInter] at x_in_a
-        push_neg at x_in_a
+        rw [a_closure_correct] at x_in_a
+        simp [mem_iUnion, mem_compl_iff] at x_in_a ⊢
         exact x_in_a
       have exists_z_compl : ∃z∈ closure_sets, x∈ zᶜ  := by
-        exact x_in_closure_comp
-      have z_comp_open_nei : ∃z∈ closure_sets, zᶜ∈ nei_x:=
-        rcases exists_z_compl with (Z,hZ,hxZ)
-        exact (Z,hZ,⟨hZ.1,hxZ⟩)
+        rw [Set.mem_iUnion] at x_in_closure_comp
+        rcases x_in_closure_comp with ⟨z, hz⟩
+        rw [Set.mem_iUnion] at hz
+        rcases hz with ⟨hz_mem, hx⟩
+        exact ⟨z, hz_mem, hx⟩
+      have z_comp_open_nei : ∃z∈ closure_sets, zᶜ∈ nei_x:= by
+        rcases exists_z_compl with ⟨Z, hZ, hxZ⟩
+        exact ⟨Z, hZ, ⟨hZ.1, hxZ⟩⟩
       rcases z_comp_open_nei with ⟨Z, hZ, hZnei⟩
       refine ⟨Zᶜ, ?_, ?_⟩
       · have : Zᶜ ∈ neighbourhood x := by
