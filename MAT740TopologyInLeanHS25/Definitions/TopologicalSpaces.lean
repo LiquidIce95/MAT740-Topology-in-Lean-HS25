@@ -158,10 +158,12 @@ variable {X : Type u} [Topology X]
 
 
 /-- The closure of `A` as intersection of all closed supersets. -/
+@[simp]
 def Closure (A : Set X) : Set X :=
   ⋂ C : {C : Set X | Closed C ∧ A ⊆ C}, C
 
-
+/--Is very easy to prove via induction but somehow here ... its not  -/
+@[simp]
 theorem finite_sInter_open
   (S : Set (Set X))
   (hfin : S.Finite)
@@ -169,7 +171,8 @@ theorem finite_sInter_open
   Open (⋂s∈ S, s) := by
     sorry
 
-
+/--The lemma 'without proof' that ironically needs a lot of proving-/
+@[simp]
 theorem finite_union_of_closed_is_closed
   (S : Set (Set X))
   (hfin : S.Finite)
@@ -207,6 +210,7 @@ theorem finite_union_of_closed_is_closed
     case hfin => assumption
     assumption
 
+@[simp]
 theorem inter_of_closed_is_closed
   (S : Set (Set X))
   (hclosed : ∀ C ∈ S, Closed C) :
@@ -230,6 +234,168 @@ theorem inter_of_closed_is_closed
       simp [sUnion_eq_biUnion]
     rw [h6] at h2
     assumption
+
+@[simp]
+theorem closure_is_closed (A : Set X) : Closed (Closure A) := by
+  have hclosed : ∀ C ∈ {C : Set X | Closed C ∧ A ⊆ C}, Closed C := by
+    intro C hC; exact (And.left hC)
+  have hEq : Closure A = ⋂ s ∈ {C : Set X | Closed C ∧ A ⊆ C}, s := by
+    ext x; simp [Closure]
+  have hInter : Closed (⋂ s ∈ {C : Set X | Closed C ∧ A ⊆ C}, s) :=
+    inter_of_closed_is_closed _ hclosed
+  rw [hEq]
+  trivial
+
+
+/-- Theorem 1 -/
+@[simp]
+theorem chara_closed
+  (A : Set X) :
+  Closed A ↔ A= Closure A := by
+    constructor
+    case mp =>
+      intro a_closed
+      have a_closure_set : Closed A ∧ A⊆ A := by
+        trivial
+      have closure_is_subset: Closure A ⊆ A := by
+        intro x
+        intro x_in_closure
+        have x_is_in_all_sets : ∀C ∈  {C : Set X| Closed C ∧ A⊆ C}, x∈ C := by
+           simpa [Closure] using x_in_closure
+        apply x_is_in_all_sets at a_closure_set
+        assumption
+      have a_is_subset : A ⊆ Closure A := by
+        intro x
+        intro x_in_a
+        have x_in_all : ∀C ∈ {C:Set X| Closed C ∧ A⊆ C},x∈ C := by
+          intro c
+          intro some_c
+          have a_subset_c : A⊆c :=
+             And.right some_c
+          exact a_subset_c x_in_a
+        have x_in_inter : x∈ (⋂ C ∈ {C: Set X| Closed C ∧ A⊆C},C):= by
+            simpa [Set.mem_iInter] using x_in_all
+        have being_same : Closure A = ⋂ c ∈ {C:Set X| Closed C ∧ A⊆ C},c := by
+          ext y
+          simp [Closure, Set.mem_iInter, Set.mem_setOf_eq]
+        simpa [being_same] using x_in_inter
+      apply Set.Subset.antisymm
+      trivial
+      trivial
+    case mpr =>
+      intro being_same
+      rw [being_same]
+      apply closure_is_closed
+
+
+@[simp]
+def neighbourhood
+  (x : X) : Set (Set X) :=
+  {U : Set X| Open U ∧ x∈U}
+
+/-- Theorem 2 -/
+@[simp]
+theorem consistency_alt_def
+  (A : Set X) :
+  (Closed A ↔ ∀x∈ Aᶜ,∃U ∈ (neighbourhood x), U⊆Aᶜ) := by
+    constructor
+    case mp =>
+      intro a_closed
+      have a_is_closure : A=Closure A := by
+        apply (chara_closed A).1 a_closed
+      let closure_sets :Set (Set X):= {C: Set X| Closed C ∧ A⊆ C}
+      have a_closure_correct : A=⋂c∈ closure_sets,c := by
+        rw [Closure] at a_is_closure
+        rw [a_is_closure]
+        ext x
+        simp [closure_sets,mem_iInter,Subtype.forall]
+      have a_subset : ∀ Z∈ closure_sets,A⊆ Z := by
+         intro Z hZ
+         exact hZ.right
+      have z_comp_subset_a_comp : ∀Z∈ closure_sets, Zᶜ ⊆ Aᶜ := by
+        intro Z hZ
+        intro y hy
+        simp at hy
+        intro hyA
+        exact hy (hZ.right hyA)
+      intro x
+      intro x_in_a
+      let nei_x : Set (Set X) := neighbourhood x
+      have x_in_closure_comp : x∈ ⋃z∈ closure_sets ,zᶜ := by
+        rw [mem_iUnion]
+        rw [a_closure_correct, mem_iInter] at x_in_a
+        push_neg at x_in_a
+        exact x_in_a
+      have exists_z_compl : ∃z∈ closure_sets, x∈ zᶜ  := by
+        exact x_in_closure_comp
+      have z_comp_open_nei : ∃z∈ closure_sets, zᶜ∈ nei_x:=
+        rcases exists_z_compl with (Z,hZ,hxZ)
+        exact (Z,hZ,⟨hZ.1,hxZ⟩)
+      rcases z_comp_open_nei with ⟨Z, hZ, hZnei⟩
+      refine ⟨Zᶜ, ?_, ?_⟩
+      · have : Zᶜ ∈ neighbourhood x := by
+          simpa [nei_x] using hZnei
+        exact this
+      · intro y hy
+        exact z_comp_subset_a_comp Z hZ hy
+    case mpr =>
+    intro h
+    have hA_compl_open : Open Aᶜ := by
+      -- For each x in Aᶜ, we have a neighborhood U_x contained in Aᶜ
+      -- We'll express Aᶜ as the union of all these U_x
+      let S : Set (Set X) := {U | ∃ (x : X) (hx : x ∈ Aᶜ), U ∈ neighbourhood x ∧ U ⊆ Aᶜ}
+      have hS_open : ∀ U ∈ S, Open U := by
+        intro U hU
+        rcases hU with ⟨x, hx, hU_nei, hU_sub⟩
+        exact hU_nei.1  -- Since U ∈ neighbourhood x, it's open
+
+      have hA_compl_eq : Aᶜ = ⋃₀ S := by
+        ext x
+        constructor
+        · intro hx
+          rcases h x hx with ⟨U, hU_nei, hU_sub⟩
+          refine ⟨U, ⟨x, hx, hU_nei, hU_sub⟩, hU_nei.2⟩
+        · intro hx
+          rcases hx with ⟨U, hU_S, hxU⟩
+          rcases hU_S with ⟨y, hy, hU_nei, hU_sub⟩
+          exact hU_sub hxU
+
+      rw [hA_compl_eq]
+      have better_union : ⋃ s∈ S, s = ⋃₀S := by
+          simp [sUnion_eq_biUnion]
+      rw [← better_union]
+      exact Open_biUnion hS_open
+    exact hA_compl_open
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

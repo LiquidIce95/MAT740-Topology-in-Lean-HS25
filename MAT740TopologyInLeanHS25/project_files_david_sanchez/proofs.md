@@ -13,14 +13,26 @@ For a topology $\mathcal{T}$ we call $A\in \mathcal{T}$ open
 ## Def. Closed
 $Y\subseteq X$ is said to be closed iff $Y^{c}:=X\setminus Y$ is open
 
-## lemma without proof
+## lemma 
 Let $X$ be a topological space then for any collection $\set{A_{i}}_{i\in I}$ of closed sets we have 
 1. if $|I|<\infty$ then $\bigcup\limits_{i\in I}A_{i}$ is closed
 2. $\bigcap\limits_{i\in I}A_{i}$ is closed
 
+### Proof of 1.
+$(\bigcup\limits_{i\in I}A_{i})=((\bigcup\limits_{i\in I}A_{i})^{c})^{c}=(\bigcap\limits_{i\in I}A_{i}^{c})^{c}$
+
+Since each $A_{i}$ is closed, $A_{i}^{c}$ is open and $I$ is finite so the finite intersection is open as well, taking its complement gives a closed set.
+
+### Proof of 2.
+$(\bigcap\limits_{i\in I}A_{i})=((\bigcap\limits_{i\in I}A_{i})^{c})^{c}=(\bigcup\limits_{i\in I}A_{i}^{c})^{c}$
+
+again, $A_{i}$ is closed so $A_{i}^{c}$ is open so the union of opens is open, thus its complement is closed
+
 ## Def. closure
 Let $A\subseteq X$ be a subset of a topological space $X$ , then
 the closure of  $A$ is given by $\overline{A}:=\bigcap\limits_{C\supseteq A, C \text{closed}}C$ 
+
+By the preceeding lemma, the closure is obviously closed since its an intersection of closed sets
 
 ## Theorem 1, characterization of closed
 Let $A\subseteq X$ be a subset of a topological space $X$ , then
@@ -35,7 +47,8 @@ $\overline{A}=\bigcap\limits_{C \text{ closed},C\supseteq A}C\supseteq A$  , the
 $A\subseteq \overline{A}\subseteq A$ which gives us $A=\overline{A}$ 
 
 Now lets proceed with the right left implication (<=)
-Suppose we have $A=\overline{A}$ 
+Suppose we have $A=\overline{A}$ then
+
 $\overline{A}=\bigcap\limits_{C \text{ is closed},C\supseteq A}C$ , by the preceeding lemma, an arbitrary intersection of closed sets is closed
 
 so we are immediately done.
