@@ -145,3 +145,140 @@ def restrictionTopology [Topology X] (U : Set X) (open_U : Open U) : Topology �
     specialize hC V' hV'1
     rw [hV'2] at hC
     exact hC
+
+
+
+----------------------------------------------------------------
+-- Closure and its basic properties
+----------------------------------------------------------------
+
+section Closure
+
+variable {X : Type u} [Topology X]
+
+
+/-- The closure of `A` as intersection of all closed supersets. -/
+def Closure (A : Set X) : Set X :=
+  ⋂ C : {C : Set X | Closed C ∧ A ⊆ C}, C
+
+
+theorem finite_sInter_open
+  (S : Set (Set X))
+  (hfin : S.Finite)
+  (hopen : ∀ U ∈ S, Open U) :
+  Open (⋂s∈ S, s) := by
+    sorry
+
+
+theorem finite_union_of_closed_is_closed
+  (S : Set (Set X))
+  (hfin : S.Finite)
+  (hclosed : ∀ C ∈ S, Closed C) :
+  (Closed (⋃ s ∈ S, s)) := by
+    have hDeMorgan : (⋃ s∈S,s)ᶜ = ⋂s∈S, sᶜ := by
+      simp
+    have h : (⋃s∈ S,s)= ((⋃s∈S,s)ᶜ)ᶜ := by ext; simp
+    rw [h]
+    rw [hDeMorgan]
+    rw [Closed]
+    have h2 : (⋂s∈ S, sᶜ )ᶜᶜ = (⋂s∈ S,sᶜ) := by
+      simp
+    rw [h2]
+    have h3 : ∀ s ∈ S, Open (sᶜ) := by
+      intro s hs
+      have hsClosed : Closed s := hclosed s hs
+      simpa [Closed] using hsClosed
+    let S' : Set (Set X) := {sᶜ | s∈ S}
+    have h4 : ⋂ s∈S, sᶜ = ⋂ s'∈ S',s':= by
+      ext x
+      simp [S']
+    rw [h4]
+    have h5 : ∀s'∈ S', Open s' := by
+      intro s' hs'
+      rcases hs' with ⟨s, hsS, rfl⟩
+      exact h3 s hsS
+    have h6 : S'.Finite := by
+      have hEq : S' = compl '' S := by
+        ext U
+        simp [S']
+      rw [hEq]
+      apply hfin.image
+    apply finite_sInter_open at h5
+    case hfin => assumption
+    assumption
+
+theorem inter_of_closed_is_closed
+  (S : Set (Set X))
+  (hclosed : ∀ C ∈ S, Closed C) :
+  Closed (⋂ s ∈ S, s) := by
+    rw [Closed]
+    let S' : Set (Set X) := {sᶜ | s ∈ S}
+    have hDeMorgan : (⋂ s ∈ S, s)ᶜ = ⋃ s ∈ S, sᶜ := by
+      ext x
+      simp
+    have h1 : (⋂ s∈ S, s)ᶜ = ⋃ s'∈ S', s' := by
+      ext x
+      simp [S']
+    rw [h1]
+    have h2 : ∀ s' ∈ S', Open s' := by
+      intro s' hs'
+      rcases hs' with ⟨s, hsS, rfl⟩
+      have hsClosed : Closed s := hclosed s hsS
+      simpa [Closed] using hsClosed
+    apply Open_sUnion at h2
+    have h6: (⋃₀S'=⋃s∈S',s) := by
+      simp [sUnion_eq_biUnion]
+    rw [h6] at h2
+    assumption
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+end Closure
