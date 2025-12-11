@@ -371,6 +371,56 @@ theorem consistency_alt_def
     exact hA_compl_open
 
 
+/-- lemma 3 -/
+@[simp]
+theorem in_closure_iff_inter_non_empty
+  (A : Set X)
+  (x : X) :
+  (x∈ (Closure A) ↔ ∀U ∈ (neighbourhood x),U ∩ A ≠ ∅):= by
+    constructor
+    case mp =>
+      intro x_in_closure
+      let closure_sets :Set (Set X):= {C: Set X| Closed C ∧ A⊆ C}
+      have x_in_all_Z : ∀Z∈ closure_sets, x∈ Z := by
+        intro Z hZ
+        exact Set.mem_iInter.1 x_in_closure ⟨Z, hZ⟩
+      intro U hU
+      rcases hU with ⟨hU_open, hxU⟩
+      by_contra H  -- H: U ∩ A = ∅
+
+      have a_in_comp : A⊆ Uᶜ := by
+        intro a ha
+        intro hUa
+        have : a ∈ U ∩ A := ⟨hUa, ha⟩
+        rw [H] at this
+        exact this.elim
+      have h_closed : Closed Uᶜ := by
+        rw [Closed]
+        simp [hU_open]
+      have hZ : Uᶜ ∈ closure_sets := by
+        dsimp [closure_sets]
+        exact ⟨h_closed, a_in_comp⟩
+      have x_in_U_comp : x∈ Uᶜ := x_in_all_Z (Uᶜ) hZ
+      simp at x_in_U_comp hxU
+      exact x_in_U_comp hxU
+    case mpr =>
+      intro nei_non_empty
+      have mem_closure_iff : x ∈ Closure A ↔ ∀ (C : Set X), Closed C → A ⊆ C → x ∈ C := by
+        simp [Closure, Set.mem_iInter, Subtype.forall]
+      rw [mem_closure_iff]
+      intro C hC_closed hA_sub
+      by_contra hxC
+      have h_open : Open Cᶜ := hC_closed
+      have hx_Cc : x ∈ Cᶜ := by
+        simp [hxC]
+      have h_nei : Cᶜ ∈ neighbourhood x := ⟨h_open, hx_Cc⟩
+      specialize nei_non_empty Cᶜ h_nei
+      have h_sub : Cᶜ ∩ A ⊆ ∅ := by
+        intro y ⟨hyC, hyA⟩
+        exfalso
+        exact hyC (hA_sub hyA)
+      have h_empty : Cᶜ ∩ A = ∅ := Set.subset_empty_iff.1 h_sub
+      exact nei_non_empty h_empty
 
 
 
