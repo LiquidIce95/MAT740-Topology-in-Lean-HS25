@@ -152,8 +152,6 @@ def restrictionTopology [Topology X] (U : Set X) (open_U : Open U) : Topology �
 -- Closure and its basic properties
 ----------------------------------------------------------------
 
-section Closure
-
 variable {X : Type u} [Topology X]
 
 
@@ -162,53 +160,15 @@ variable {X : Type u} [Topology X]
 def Closure (A : Set X) : Set X :=
   ⋂ C : {C : Set X | Closed C ∧ A ⊆ C}, C
 
-/--Is very easy to prove via induction but somehow here ... its not  -/
+/-- its easy to prove with induction but here for some reason, borderline
+  impossible -/
 @[simp]
 theorem finite_sInter_open
   (S : Set (Set X))
   (hfin : S.Finite)
   (hopen : ∀ U ∈ S, Open U) :
-  Open (⋂s∈ S, s) := by
+  Open (⋂ s ∈ S, s) := by
     sorry
-
-/--The lemma 'without proof' that ironically needs a lot of proving-/
-@[simp]
-theorem finite_union_of_closed_is_closed
-  (S : Set (Set X))
-  (hfin : S.Finite)
-  (hclosed : ∀ C ∈ S, Closed C) :
-  (Closed (⋃ s ∈ S, s)) := by
-    have hDeMorgan : (⋃ s∈S,s)ᶜ = ⋂s∈S, sᶜ := by
-      simp
-    have h : (⋃s∈ S,s)= ((⋃s∈S,s)ᶜ)ᶜ := by ext; simp
-    rw [h]
-    rw [hDeMorgan]
-    rw [Closed]
-    have h2 : (⋂s∈ S, sᶜ )ᶜᶜ = (⋂s∈ S,sᶜ) := by
-      simp
-    rw [h2]
-    have h3 : ∀ s ∈ S, Open (sᶜ) := by
-      intro s hs
-      have hsClosed : Closed s := hclosed s hs
-      simpa [Closed] using hsClosed
-    let S' : Set (Set X) := {sᶜ | s∈ S}
-    have h4 : ⋂ s∈S, sᶜ = ⋂ s'∈ S',s':= by
-      ext x
-      simp [S']
-    rw [h4]
-    have h5 : ∀s'∈ S', Open s' := by
-      intro s' hs'
-      rcases hs' with ⟨s, hsS, rfl⟩
-      exact h3 s hsS
-    have h6 : S'.Finite := by
-      have hEq : S' = compl '' S := by
-        ext U
-        simp [S']
-      rw [hEq]
-      apply hfin.image
-    apply finite_sInter_open at h5
-    case hfin => assumption
-    assumption
 
 @[simp]
 theorem inter_of_closed_is_closed
@@ -422,82 +382,89 @@ theorem in_closure_iff_inter_non_empty
       have h_empty : Cᶜ ∩ A = ∅ := Set.subset_empty_iff.1 h_sub
       exact nei_non_empty h_empty
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-end Closure
+/-- For some reason we need to change the name here... -/
+structure Filters (X : Type*) where
+  Sets : Set (Set X)
+  univ_Sets : Set.univ ∈ Sets
+  upward_Sets {A B} : A ∈ Sets → A ⊆ B → B ∈ Sets
+  inter_Sets {A B} : A ∈ Sets → B ∈ Sets → A ∩ B ∈ Sets
+
+structure IsProperFilter {X : Type*} (F : Filters X) : Prop where
+  empty_not_mem : (∅ : Set X) ∉ F.Sets
+
+
+/-- Theorem 4 (Bradley-style characterization via proper filters). -/
+theorem bradley
+  (A : Set X)
+  (x : X) :
+  x ∈ Closure A ↔ ∃ F : Filters X, IsProperFilter F ∧ (neighbourhood x) ⊆ F.Sets ∧ A ∈ F.Sets := by
+  constructor
+  case mp =>
+    intro x_in_closure_a
+    let B: Set (Set X) := {C : Set X | ∃ U : Set X, U ∈ neighbourhood x ∧ C = U ∩ A}
+    let Fsets : Set (Set X):= {D : Set X | ∃ C : Set X, C ∈ B ∧ C ⊆ D}
+    have first_prop : (Set.univ : Set X) ∈ Fsets := by
+      have h_univ_nei : Set.univ ∈ neighbourhood x := ⟨Open_univ, mem_univ x⟩
+      have hA_in_B : A ∈ B := ⟨Set.univ, h_univ_nei, by simp⟩
+      exact ⟨A, hA_in_B, Set.subset_univ A⟩
+    have second_prop : ∀A∈ Fsets,∀B'∈ B, A⊆ B' ∧ B'⊆ (Set.univ) → B'∈ Fsets := by
+      rintro A _ B' hB' ⟨-, -⟩
+      exact ⟨B', hB', Set.Subset.refl B'⟩
+    have third_prop : ∀A∈ Fsets,∀B∈ Fsets,A∩B∈ Fsets := by
+      intro A1 hA1 A2 hA2
+      rcases hA1 with ⟨C1, hC1, hC1A⟩
+      rcases hA2 with ⟨C2, hC2, hC2A⟩
+      rcases hC1 with ⟨U1, hU1, rfl⟩
+      rcases hC2 with ⟨U2, hU2, rfl⟩
+      have hU : U1 ∩ U2 ∈ neighbourhood x := by
+        rcases hU1 with ⟨hU1_open, hx1⟩
+        rcases hU2 with ⟨hU2_open, hx2⟩
+        exact ⟨Open_inter hU1_open hU2_open, mem_inter hx1 hx2⟩
+      use (U1 ∩ U2) ∩ A
+      constructor
+      · exact ⟨U1 ∩ U2, hU, rfl⟩
+      · intro y hy
+        rcases hy with ⟨⟨hyU1, hyU2⟩, hyA⟩
+        exact ⟨hC1A ⟨hyU1, hyA⟩, hC2A ⟨hyU2, hyA⟩⟩
+    let F : Filters X :=
+      { Sets := Fsets
+        univ_Sets := first_prop
+        upward_Sets := by
+          intro A B hA hAB
+          rcases hA with ⟨C, hC, hC_sub⟩
+          exact ⟨C, hC, Set.Subset.trans hC_sub hAB⟩
+        inter_Sets := by
+          intro A B hA hB
+          exact third_prop A hA B hB }
+    have empty_not_mem : (∅ : Set X) ∉ F.Sets := by
+      intro h
+      dsimp [F, Fsets] at h
+      rcases h with ⟨C, hC, hC_sub⟩
+      rcases hC with ⟨U, hU, rfl⟩
+      have h_nonempty : (U ∩ A) ≠ ∅ := (in_closure_iff_inter_non_empty A x).mp x_in_closure_a U hU
+      have h_empty : U ∩ A = ∅ := Set.subset_empty_iff.mp hC_sub
+      exact h_nonempty h_empty
+    have is_proper : IsProperFilter F :=
+      { empty_not_mem := empty_not_mem }
+    have nei_a_in_f :(neighbourhood x) ⊆ F.Sets ∧ A ∈ F.Sets := by
+      constructor
+      · intro U hU
+        exact ⟨U ∩ A, ⟨U, hU, rfl⟩, by
+          intro x hx
+          exact hx.left⟩
+      · exact ⟨A, ⟨Set.univ, ⟨Open_univ, mem_univ x⟩, by simp⟩, Set.Subset.refl A⟩
+    exact ⟨F, is_proper, nei_a_in_f.1, nei_a_in_f.2⟩
+  case mpr =>
+    intro f
+    rcases f with ⟨F, hFproper, hNx, hA⟩
+    have both_in_filt : ∀ U∈ (neighbourhood x),U∩ A∈ F.Sets := by
+      intro U hU
+      have hU_in : U ∈ F.Sets := hNx hU
+      exact F.inter_Sets hU_in hA
+    have cannot_be_empty : ∀U∈ (neighbourhood x),U∩A≠ ∅:= by
+      intro U hU
+      have h_inter : U ∩ A ∈ F.Sets := both_in_filt U hU
+      intro h_empty
+      rw [h_empty] at h_inter
+      exact hFproper.empty_not_mem h_inter
+    exact (in_closure_iff_inter_non_empty A x).2 cannot_be_empty
