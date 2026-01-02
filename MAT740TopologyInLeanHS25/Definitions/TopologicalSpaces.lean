@@ -160,15 +160,7 @@ variable {X : Type u} [Topology X]
 def Closure (A : Set X) : Set X :=
   ⋂ C : {C : Set X | Closed C ∧ A ⊆ C}, C
 
-/-- its easy to prove with induction but here for some reason, borderline
-  impossible -/
-@[simp]
-theorem finite_sInter_open
-  (S : Set (Set X))
-  (hfin : S.Finite)
-  (hopen : ∀ U ∈ S, Open U) :
-  Open (⋂ s ∈ S, s) := by
-    sorry
+
 
 @[simp]
 theorem inter_of_closed_is_closed
@@ -177,9 +169,6 @@ theorem inter_of_closed_is_closed
   Closed (⋂ s ∈ S, s) := by
     rw [Closed]
     let S' : Set (Set X) := {sᶜ | s ∈ S}
-    have hDeMorgan : (⋂ s ∈ S, s)ᶜ = ⋃ s ∈ S, sᶜ := by
-      ext x
-      simp
     have h1 : (⋂ s∈ S, s)ᶜ = ⋃ s'∈ S', s' := by
       ext x
       simp [S']
